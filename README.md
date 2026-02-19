@@ -1,7 +1,11 @@
 # ohayoMaya
 
-## 概要
+## モジュール概要
 - Mayaスクリプトを追加するリポジトリです。
+
+## 動作環境
+- Maya 2026 以上
+- Python 3.11.4 以上
 
 ## 使用方法
 - ohayoMAYAを `~\Documents\maya\2026\scripts` にクローンします。
