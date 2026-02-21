@@ -63,17 +63,21 @@ class KeyframeOptimizer:
             tolerance (int): 精度(0.01〜0.1推奨,値が大きいほどキーフレームが減る)
 
         Returns:
-            成功: True : キーフレーム最適化した
-            失敗: False : オブジェクトが未選択
+            成功: int : 最適化されたアニメーションカーブの数
+            失敗: None : オブジェクトが未選択
 
         tolerance: 0.01〜0.1推奨
         return: True if success, False if no selection
         """
         if not keys:
-            return False
+            return None
+        # オブジェクトが存在するか確認
         selection_ = list(keys.keys())
-        cmds.simplify(
+        for obj_ in selection_:
+            if cmds.objExists(obj_) == False:
+                return None
+        curvNum_ = cmds.simplify(
             selection_, 
             time=(None, None),
             valueTolerance=tolerance)
-        return True
+        return curvNum_

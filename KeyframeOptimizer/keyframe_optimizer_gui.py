@@ -93,9 +93,12 @@ class KeyframeOptimizerGUI(QtWidgets.QDialog):
         """「実行」ボタンが押下されたときに実行される関数
         """
         tolerance_ = self.toleranceSpinBox_.value()
-        if kfo_logic.execute_optimize(self.originalKeys, tolerance_):
-            QtWidgets.QMessageBox.information(self, "完了", "キーフレームを最適化しました。")
-            self.close()
+        result_ = kfo_logic.execute_optimize(self.originalKeys, tolerance_)
+        if result_ == None:
+            QtWidgets.QMessageBox.warning(self, "警告", "オブジェクトが存在しないか、選択されていません。")
+            return
+        QtWidgets.QMessageBox.information(self, "完了", f"キーフレームを最適化しました。{result_}個のアニメーションカーブが最適化されました。")
+        self.close()
 
     def update_preview_table(self, keys):
         """プレビューテーブルを更新する関数
