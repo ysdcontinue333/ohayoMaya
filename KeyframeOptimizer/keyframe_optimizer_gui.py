@@ -23,7 +23,7 @@ class KeyframeOptimizerGUI(QtWidgets.QDialog):
     def setupUi(self):
         """UIまわりの構築
         """
-        windowWidth_ = 300
+        windowWidth_ = 600
         windowHeight_ = 450
         windowPosX_ = (1920 / 2.0) - (windowWidth_ / 2.0)
         windowPosY_ = (1080 / 2.0) - (windowHeight_ / 2.0)
@@ -35,7 +35,7 @@ class KeyframeOptimizerGUI(QtWidgets.QDialog):
         centralLayout_ = QtWidgets.QVBoxLayout()
 
         # 分析ボタン
-        analyzeBtn_ = QtWidgets.QPushButton("Analyze Selection")
+        analyzeBtn_ = QtWidgets.QPushButton("選択中のオブジェクトを分析")
         analyzeBtn_.clicked.connect(self.on_analyzeBtn_clicked)
         centralLayout_.addWidget(analyzeBtn_)
         # 許容値
@@ -43,16 +43,18 @@ class KeyframeOptimizerGUI(QtWidgets.QDialog):
         toleranceLayout_.addWidget(QtWidgets.QLabel("Tolerance:"))
         self.toleranceSpinBox_ = QtWidgets.QDoubleSpinBox()
         self.toleranceSpinBox_.setValue(0.01)
-        self.toleranceSpinBox_.setRange(0.01, 10.0)
+        self.toleranceSpinBox_.setSingleStep(0.01)
+        self.toleranceSpinBox_.setRange(0.01, 100.0)
         self.toleranceSpinBox_.valueChanged.connect(self.on_toleranceSpinBox_changed)
         toleranceLayout_.addWidget(self.toleranceSpinBox_)
         toleranceLayout_.addStretch()
         centralLayout_.addLayout(toleranceLayout_)
         # プレビュー
+        previewLabel_ = QtWidgets.QLabel("最適化のプレビュー")
+        centralLayout_.addWidget(previewLabel_)
         self.previewTable_ = QtWidgets.QTableWidget(0, 4)
-        self.previewTable_.setHorizontalHeaderLabels(["Object", "Current", "After", "Reduced"])
-        self.previewTable_.setMaximumHeight(200)
-        centralLayout_.addWidget(QtWidgets.QLabel("プレビュー:"))
+        self.previewTable_.setHorizontalHeaderLabels(["オブジェクト名", "適用前", "適用後", "差分"])
+        self.previewTable_.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
         centralLayout_.addWidget(self.previewTable_)
         # 実行
         btnLayout_ = QtWidgets.QHBoxLayout()
@@ -91,7 +93,7 @@ class KeyframeOptimizerGUI(QtWidgets.QDialog):
         """「実行」ボタンが押下されたときに実行される関数
         """
         tolerance_ = self.toleranceSpinBox_.value()
-        if kfo_logic.execute_optimize(tolerance_):
+        if kfo_logic.execute_optimize(self.originalKeys, tolerance_):
             QtWidgets.QMessageBox.information(self, "完了", "キーフレームを最適化しました。")
             self.close()
 

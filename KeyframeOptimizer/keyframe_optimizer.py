@@ -5,7 +5,7 @@ class KeyframeOptimizer:
     """キーフレーム最適化(ロジックのみ)
     メンバ関数を持たず、すべて静的関数として実装
     """
-    
+
     @staticmethod
     def analyze_selection():
         """アウトラインで選択されているオブジェクトのキーフレーム数を分析する
@@ -55,10 +55,11 @@ class KeyframeOptimizer:
         return preview_
 
     @staticmethod
-    def execute_optimize(tolerance):
+    def execute_optimize(keys, tolerance):
         """キーフレーム最適化の実行
 
         Args:
+            keys (obj): analyze_selectionの実行結果
             tolerance (int): 精度(0.01〜0.1推奨,値が大きいほどキーフレームが減る)
 
         Returns:
@@ -68,11 +69,11 @@ class KeyframeOptimizer:
         tolerance: 0.01〜0.1推奨
         return: True if success, False if no selection
         """
-        selection = cmds.ls(sl=True)
-        if not selection:
+        if not keys:
             return False
+        selection_ = list(keys.keys())
         cmds.simplify(
-            selection, 
+            selection_, 
             time=(None, None),
             valueTolerance=tolerance)
         return True
