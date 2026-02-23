@@ -7,11 +7,32 @@ class KeyframeOptimizer:
     """
 
     @staticmethod
+    def get_default_settings():
+        """デフォルト値を取得する関数
+
+        Returns:
+            dict : キーフレーム最適化のデフォルト設定値の連想配列
+        """
+        return {
+            "radioButtonTimeSelect" : False,
+            "timeStartSpinBox": 0.0,
+            "timeFinishSpinBox": 0.0, 
+            "checkboxAttrTransX": True,
+            "checkboxAttrTransY": True,
+            "checkboxAttrTransZ": True,
+            "checkboxAttrRotX": True,
+            "checkboxAttrRotY": True,
+            "checkboxAttrRotZ": True,
+            "timeTolerance": 0.05,  # maya.cmds.simplifyのデフォルト値
+            "valueTolerance": 0.01  # maya.cmds.simplifyのデフォルト値
+        }
+
+    @staticmethod
     def analyze_selection():
         """アウトラインで選択されているオブジェクトのキーフレーム数を分析する
 
         Returns:
-            成功: {string: {"current": int}} : オブジェクト別のキーフレーム数の連想配列
+            成功: {string: {"KeyCounts": int}} : オブジェクト別のキーフレーム数の連想配列
             失敗: None
         """
         selection_ = cmds.ls(sl=True)
@@ -25,59 +46,48 @@ class KeyframeOptimizer:
                 query=True, 
                 valueChange=True, 
                 timeChange=True ) or [0]
-            keys_[obj_] = {"current": len(keysInfo_[::2])}
+            keys_[obj_] = {"KeyCounts": len(keysInfo_[::2])}
         return keys_
-    
-    @staticmethod
-    def preview_optimize(keys, tolerance):
-        """キーフレーム最適化のプレビューを生成する
-
-        Args:
-            keys (obj): analyze_selectionの実行結果
-            tolerance (int): 精度(0.01〜0.1推奨,値が大きいほどキーフレームが減る)
-
-        Returns:
-            成功: {obj: {"current": int, "after": int, "reduced": int}} : オブジェクト別の最適化前後と削減数の連想配列
-            失敗: None : オブジェクトが未選択
-        """
-        if not keys:
-            return None
-        preview_ = {}
-        for obj_, info in keys.items():
-            # toleranceが10%ならキーフレームは30%削減と仮定
-            reduceRate_ = tolerance * 0.3  # 10%→30%目安
-            estimated_ = max(3, int(info["current"] * (1.0 - reduceRate_)))  # 最低3キーは残る想定
-            preview_[obj_] = {
-                "current": info["current"], 
-                "after": estimated_,
-                "reduced": info["current"] - estimated_
-            }
-        return preview_
 
     @staticmethod
-    def execute_optimize(keys, tolerance):
+    def execute_optimize(keys, filterSettings):
         """キーフレーム最適化の実行
 
         Args:
-            keys (obj): analyze_selectionの実行結果
-            tolerance (int): 精度(0.01〜0.1推奨,値が大きいほどキーフレームが減る)
+            keys (obj)              : analyze_selection()の実行結果
+            filterSettings (dict)   : get_default_settings()の実行結果
 
         Returns:
-            成功: int : 最適化されたアニメーションカーブの数
-            失敗: None : オブジェクトが未選択
-
-        tolerance: 0.01〜0.1推奨
-        return: True if success, False if no selection
+            成功: int               : 最適化されたアニメーションカーブの数
+            失敗: None              : オブジェクトが未選択
         """
         if not keys:
             return None
-        # オブジェクトが存在するか確認
+        # フィルタを適用するオブジェクトが存在するか確認
         selection_ = list(keys.keys())
         for obj_ in selection_:
             if cmds.objExists(obj_) == False:
                 return None
+        # すべてのキーが含まれているか
+        defaultSettings_ = KeyframeOptimizer.get_default_settings()
+        for key_ in defaultSettings_.keys():
+            if key_ not in filterSettings:
+                return None
+        # キーフレームの最適化を実行
+        ## 時間指定には秒数やフレーム数があるが、数値のみ指定したときは現在時間の単位で解釈される
+        startTime_ = filterSettings["timeStartSpinBox"] if filterSettings["radioButtonTimeSelect"] else None
+        endTime_ = filterSettings["timeFinishSpinBox"] if filterSettings["radioButtonTimeSelect"] else None
         curvNum_ = cmds.simplify(
-            selection_, 
-            time=(None, None),
-            valueTolerance=tolerance)
+            selection_,
+            attribute=[
+                "translateX" if filterSettings["checkboxAttrTransX"] else None,
+                "translateY" if filterSettings["checkboxAttrTransY"] else None,
+                "translateZ" if filterSettings["checkboxAttrTransZ"] else None,
+                "rotateX" if filterSettings["checkboxAttrRotX"] else None,
+                "rotateY" if filterSettings["checkboxAttrRotY"] else None,
+                "rotateZ" if filterSettings["checkboxAttrRotZ"] else None
+            ],
+            time=(startTime_, endTime_),
+            timeTolerance=filterSettings["timeTolerance"],
+            valueTolerance=filterSettings["valueTolerance"])
         return curvNum_
