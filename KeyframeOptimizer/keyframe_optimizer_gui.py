@@ -9,220 +9,106 @@ class KeyframeOptimizerGUI(QtWidgets.QDialog):
     """キーフレーム最適化(GUI)
     """
     objName_ = 'KeyframeOptimizerGUI'
-    # ウィンドウサイズ
-    DEFAULT_WINDOW_WIDTH = 600
-    DEFAULT_WINDOW_HEIGHT = 600
-    DEFAULT_WINDOW_POSX = (1920 / 2.0) - (DEFAULT_WINDOW_WIDTH / 2.0)
-    DEFAULT_WINDOW_POSY = (1080 / 2.0) - (DEFAULT_WINDOW_HEIGHT / 2.0)
-    # 「タイムレンジ」の定数
-    DEFAULT_TIME_START_VALUE = 0.0      # 開始時間 デフォルト値
-    STEP_TIME_START_VALUE = 1.0         # 開始時間 SpinBoxのステップ値
-    MAX_TIME_START_VALUE = 999999.0     # 開始時間 最大値
-    MIN_TIME_START_VALUE = 0.0          # 開始時間 最小値
-    DEFAULT_TIME_FINISH_VALUE = 0.0     # 終了時間 デフォルト値
-    STEP_TIME_FINISH_VALUE = 1.0        # 終了時間 SpinBoxのステップ値
-    MAX_TIME_FINISH_VALUE = 999999.0    # 終了時間 最大値
-    MIN_TIME_FINISH_VALUE = 0.0         # 終了時間 最小値
-    # 「しきい値」の定数
-    DEFAULT_TTOL_VALUE = 0.01           # TimeTolerance  デフォルト値
-    STEP_TTOL_VALUE = 0.01              # TimeTolerance  SpinBoxのステップ値
-    MAX_TTOL_VALUE = 999999.0           # TimeTolerance  最大値
-    MIN_TTOL_VALUE = 0.0                # TimeTolerance  最小値
-    DEFAULT_VTOL_VALUE = 0.05           # ValueTolerance デフォルト値
-    STEP_VTOL_VALUE = 0.01              # ValueTolerance SpinBoxのステップ値
-    MAX_VTOL_VALUE = 999999.0           # ValueTolerance 最大値
-    MIN_VTOL_VALUE = 0.0                # ValueTolerance 最小値
+    originalKeys = None
+    previewTable_ = None
+    toleranceSpinBox_ = None
 
     def __init__(self, parent=None):
         """コンストラクタ
         """
         super().__init__(parent)
-        # 初期化処理
         self.setObjectName(self.objName_)
         self.setupUi()
-        # シグナル接続 (ウィジェットの初期化後に行う)
-        self.radioButtonTimeAll.toggled.connect(self.on_timeStartRadioButton_changed)
-        self.radioButtonTimeSelect.toggled.connect(self.on_timeStartRadioButton_changed)
-        self.executeBtn.clicked.connect(self.on_executeBtn_clicked)
-        self.cancelBtn.clicked.connect(self.reject)
-        # 初期値
-        self.radioButtonTimeAll.setChecked(True)
 
     def setupUi(self):
         """UIまわりの構築
         """
-        windowWidth_ = self.DEFAULT_WINDOW_WIDTH
-        windowHeight_ = self.DEFAULT_WINDOW_HEIGHT
-        windowPosX_ = self.DEFAULT_WINDOW_POSX
-        windowPosY_ = self.DEFAULT_WINDOW_POSY
+        windowWidth_ = 600
+        windowHeight_ = 450
+        windowPosX_ = (1920 / 2.0) - (windowWidth_ / 2.0)
+        windowPosY_ = (1080 / 2.0) - (windowHeight_ / 2.0)
         self.setWindowTitle(self.objName_)
         self.setGeometry(windowPosX_, windowPosY_, windowWidth_, windowHeight_)
-        self.setFixedSize(windowWidth_, windowHeight_)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowFlags(QtCore.Qt.Window)
 
         centralLayout_ = QtWidgets.QVBoxLayout()
 
-        # 「タイムレンジ」
-        timeGroupBox_ = QtWidgets.QGroupBox("タイムレンジ")
-        timeGroupLayout_ = QtWidgets.QVBoxLayout()
-        # 「タイムレンジ」ラジオボタン
-        radioButtonTimeGroup_ = QtWidgets.QButtonGroup()
-        radioButtonTimeAll_ = QtWidgets.QRadioButton("すべて")
-        radioButtonTimeSelect_ = QtWidgets.QRadioButton("時間指定")
-        radioButtonTimeGroup_.addButton(radioButtonTimeAll_)
-        radioButtonTimeGroup_.addButton(radioButtonTimeSelect_)
-        timeRadioLayout_ = QtWidgets.QHBoxLayout()
-        timeRadioLayout_.addWidget(radioButtonTimeAll_)
-        timeRadioLayout_.addWidget(radioButtonTimeSelect_)
-        timeRadioLayout_.addStretch()
-        setattr(self, 'radioButtonTimeAll', radioButtonTimeAll_)
-        setattr(self, 'radioButtonTimeSelect', radioButtonTimeSelect_)
-        # 「タイムレンジ」時間指定
-        timeStartLayout_ = QtWidgets.QHBoxLayout()
-        timeFinishLayout_ = QtWidgets.QHBoxLayout()
-        timeStartLabel_ = QtWidgets.QLabel("開始時間：")
-        timeFinishLabel_ = QtWidgets.QLabel("終了時間：")
-        timeStartSpinBox_ = QtWidgets.QDoubleSpinBox()
-        timeFinishSpinBox_ = QtWidgets.QDoubleSpinBox()
-        timeStartSpinBox_.setValue(self.DEFAULT_TIME_START_VALUE)
-        timeStartSpinBox_.setSingleStep(self.STEP_TIME_START_VALUE)
-        timeStartSpinBox_.setRange(self.MIN_TIME_START_VALUE, self.MAX_TIME_START_VALUE)
-        timeFinishSpinBox_.setValue(self.DEFAULT_TIME_FINISH_VALUE)
-        timeFinishSpinBox_.setSingleStep(self.STEP_TIME_FINISH_VALUE)
-        timeFinishSpinBox_.setRange(self.MIN_TIME_FINISH_VALUE, self.MAX_TIME_FINISH_VALUE)
-        timeStartLayout_.addWidget(timeStartLabel_)
-        timeStartLayout_.addWidget(timeStartSpinBox_)
-        timeFinishLayout_.addWidget(timeFinishLabel_)
-        timeFinishLayout_.addWidget(timeFinishSpinBox_)
-        setattr(self, 'timeStartLabel', timeStartLabel_)
-        setattr(self, 'timeStartSpinBox', timeStartSpinBox_)
-        setattr(self, 'timeFinishLabel', timeFinishLabel_)
-        setattr(self, 'timeFinishSpinBox', timeFinishSpinBox_)
-        #「タイムレンジ」レイアウトを統合する
-        timeGroupLayout_.addLayout(timeRadioLayout_)
-        timeGroupLayout_.addLayout(timeStartLayout_)
-        timeGroupLayout_.addLayout(timeFinishLayout_)
-        timeGroupBox_.setLayout(timeGroupLayout_)
-        centralLayout_.addWidget(timeGroupBox_)
-
-        #「アトリビュート」
-        attrGroupBox_ = QtWidgets.QGroupBox("アトリビュート")
-        attrGroupLayout_ = QtWidgets.QVBoxLayout()
-        attrCheckBoxes_ = [
-            ("移動X", "checkboxAttrTransX"),
-            ("移動Y", "checkboxAttrTransY"),
-            ("移動Z", "checkboxAttrTransZ"),
-            ("回転X", "checkboxAttrRotX"),
-            ("回転Y", "checkboxAttrRotY"),
-            ("回転Z", "checkboxAttrRotZ")
-        ]
-        for attrLabel_, attrVariable_ in attrCheckBoxes_:
-            cb = QtWidgets.QCheckBox(attrLabel_)
-            cb.setChecked(True)
-            setattr(self, attrVariable_, cb)  # self.checkboxAttrTransX などの属性で再定義
-            attrGroupLayout_.addWidget(cb)
-        attrGroupBox_.setLayout(attrGroupLayout_)
-        centralLayout_.addWidget(attrGroupBox_)
-
-        # 「しきい値」
-        toleranceGroupBox_ = QtWidgets.QGroupBox("しきい値")
-        toleranceGroupLayout_ = QtWidgets.QVBoxLayout()
-        ttolLayout_ = QtWidgets.QHBoxLayout()
-        ttolLabel_ = QtWidgets.QLabel("時間しきい値 [sec] ：")
-        vtolLayout_ = QtWidgets.QHBoxLayout()
-        vtolLabel_ = QtWidgets.QLabel("変化量しきい値 [float] ：")
-        ttolSpinBox_ = QtWidgets.QDoubleSpinBox()
-        ttolSpinBox_.setValue(self.DEFAULT_TTOL_VALUE)
-        ttolSpinBox_.setSingleStep(self.STEP_TTOL_VALUE)
-        ttolSpinBox_.setRange(self.MIN_TTOL_VALUE, self.MAX_TTOL_VALUE)
-        ttolSpinBox_.setToolTip("キーフレームの時間の差がこの数値より小さいとき、同じとみなされます。")
-        vtolSpinBox_ = QtWidgets.QDoubleSpinBox()
-        vtolSpinBox_.setValue(self.DEFAULT_VTOL_VALUE)
-        vtolSpinBox_.setSingleStep(self.STEP_VTOL_VALUE)
-        vtolSpinBox_.setRange(self.MIN_VTOL_VALUE, self.MAX_VTOL_VALUE)
-        vtolSpinBox_.setToolTip("キーフレームの値の差がこの数値より小さいとき、同じとみなされます。")
-        ttolLayout_.addWidget(ttolLabel_)
-        ttolLayout_.addWidget(ttolSpinBox_)
-        vtolLayout_.addWidget(vtolLabel_)
-        vtolLayout_.addWidget(vtolSpinBox_)
-        toleranceGroupLayout_.addLayout(ttolLayout_)
-        toleranceGroupLayout_.addLayout(vtolLayout_)
-        toleranceGroupBox_.setLayout(toleranceGroupLayout_)
-        centralLayout_.addWidget(toleranceGroupBox_)
-        setattr(self, 'ttolSpinBox', ttolSpinBox_)
-        setattr(self, 'vtolSpinBox', vtolSpinBox_)
-
-        # 「実行」「キャンセル」ボタン
+        # 分析ボタン
+        analyzeBtn_ = QtWidgets.QPushButton("選択中のオブジェクトを分析")
+        analyzeBtn_.clicked.connect(self.on_analyzeBtn_clicked)
+        centralLayout_.addWidget(analyzeBtn_)
+        # 許容値
+        toleranceLayout_ = QtWidgets.QHBoxLayout()
+        toleranceLayout_.addWidget(QtWidgets.QLabel("Tolerance:"))
+        self.toleranceSpinBox_ = QtWidgets.QDoubleSpinBox()
+        self.toleranceSpinBox_.setValue(0.01)
+        self.toleranceSpinBox_.setSingleStep(0.01)
+        self.toleranceSpinBox_.setRange(0.01, 100.0)
+        self.toleranceSpinBox_.valueChanged.connect(self.on_toleranceSpinBox_changed)
+        toleranceLayout_.addWidget(self.toleranceSpinBox_)
+        toleranceLayout_.addStretch()
+        centralLayout_.addLayout(toleranceLayout_)
+        # プレビュー
+        previewLabel_ = QtWidgets.QLabel("最適化のプレビュー")
+        centralLayout_.addWidget(previewLabel_)
+        self.previewTable_ = QtWidgets.QTableWidget(0, 4)
+        self.previewTable_.setHorizontalHeaderLabels(["オブジェクト名", "適用前", "適用後", "差分"])
+        self.previewTable_.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        centralLayout_.addWidget(self.previewTable_)
+        # 実行
         btnLayout_ = QtWidgets.QHBoxLayout()
         executeBtn_ = QtWidgets.QPushButton("実行")
+        executeBtn_.clicked.connect(self.on_executeBtn_clicked)
         cancelBtn_ = QtWidgets.QPushButton("キャンセル")
+        cancelBtn_.clicked.connect(self.reject)
         btnLayout_.addWidget(executeBtn_)
         btnLayout_.addWidget(cancelBtn_)
         centralLayout_.addLayout(btnLayout_)
-        setattr(self, 'executeBtn', executeBtn_)
-        setattr(self, 'cancelBtn', cancelBtn_)
 
         self.setLayout(centralLayout_)
         return
+    
+    def on_analyzeBtn_clicked(self):
+        """「分析」ボタンが押下されたときに実行される関数
+        """
+        self.originalKeys = kfo_logic.analyze_selection()
+        if self.originalKeys == None:
+            QtWidgets.QMessageBox.warning(self, "警告", "アウトラインでオブジェクトを選択してください。")
+            return
+        self.update_preview_table(self.originalKeys)
+        return
+
+    def on_toleranceSpinBox_changed(self):
+        """SpinBoxの値が変更されたときに実行される関数
+        """
+        if self.originalKeys == None:
+            QtWidgets.QMessageBox.warning(self, "警告", "アウトラインでオブジェクトを選択してください。")
+            return
+        tolerance_ = self.toleranceSpinBox_.value()
+        preview_ = kfo_logic.preview_optimize(self.originalKeys, tolerance_)
+        self.update_preview_table(preview_)
 
     def on_executeBtn_clicked(self):
         """「実行」ボタンが押下されたときに実行される関数
         """
-        # 時間指定のフィルタ設定に不備がないか確認
-        if self.radioButtonTimeSelect.isChecked():
-            startTime_ = self.timeStartSpinBox.value()
-            finishTime_ = self.timeFinishSpinBox.value()
-            if startTime_ >= finishTime_:
-                QtWidgets.QMessageBox.warning(self, "警告", "開始時間は終了時間より小さい値にしてください。")
-                return
-        # アトリビュートが1つも選択されていないときは警告を表示して処理を中断
-        translateChecked_ = self.checkboxAttrTransX.isChecked() or self.checkboxAttrTransY.isChecked() or self.checkboxAttrTransZ.isChecked()
-        rotateChecked_ = self.checkboxAttrRotX.isChecked() or self.checkboxAttrRotY.isChecked() or self.checkboxAttrRotZ.isChecked()
-        if not (translateChecked_ or rotateChecked_):
-            QtWidgets.QMessageBox.warning(self, "警告", "最適化するアトリビュートを1つ以上選択してください。")
-            return
-
-        # キーフレーム数の分析
-        originalKeys_ = kfo_logic.analyze_selection()
-        # デフォルト値を取得
-        settings_ = kfo_logic.get_default_settings()
-        # デフォルト値をGUIの選択状態で上書き
-        settings_["radioButtonTimeSelect"] = self.radioButtonTimeSelect.isChecked()
-        settings_["timeStartSpinBox"] = self.timeStartSpinBox.value()
-        settings_["timeFinishSpinBox"] = self.timeFinishSpinBox.value()
-        settings_["checkboxAttrTransX"] = self.checkboxAttrTransX.isChecked()
-        settings_["checkboxAttrTransY"] = self.checkboxAttrTransY.isChecked()
-        settings_["checkboxAttrTransZ"] = self.checkboxAttrTransZ.isChecked()
-        settings_["checkboxAttrRotX"] = self.checkboxAttrRotX.isChecked()
-        settings_["checkboxAttrRotY"] = self.checkboxAttrRotY.isChecked()
-        settings_["checkboxAttrRotZ"] = self.checkboxAttrRotZ.isChecked()
-        settings_["valueTolerance"] = self.vtolSpinBox.value()
-        settings_["timeTolerance"] = self.ttolSpinBox.value()
-        result_ = kfo_logic.execute_optimize(originalKeys_, settings_)
+        tolerance_ = self.toleranceSpinBox_.value()
+        result_ = kfo_logic.execute_optimize(self.originalKeys, tolerance_)
         if result_ == None:
-            QtWidgets.QMessageBox.warning(self, "警告", "フィルタ設定に不備があります。設定を見直してください。")
+            QtWidgets.QMessageBox.warning(self, "警告", "オブジェクトが存在しないか、選択されていません。")
             return
         QtWidgets.QMessageBox.information(self, "完了", f"キーフレームを最適化しました。{result_}個のアニメーションカーブが最適化されました。")
-        # 最適化後のキーフレーム数を分析
-        optimizedKeys_ = kfo_logic.analyze_selection()
-        # 結果を表示
-        resultMessage_ = []
-        for obj_ in originalKeys_.keys():    
-            originalCount_ = originalKeys_[obj_]["KeyCounts"]
-            optimizedCount_ = optimizedKeys_[obj_]["KeyCounts"]
-            resultMessage_.append(f"[{obj_}:{originalCount_}→{optimizedCount_}]")
-        print("最適化前後のキーフレーム総数：" + ",".join(resultMessage_))
+        self.close()
 
-    def on_timeStartRadioButton_changed(self):
-        """「タイムレンジ」画面のラジオボタンが変更されたときに実行する関数
+    def update_preview_table(self, keys):
+        """プレビューテーブルを更新する関数
         """
-        isTimeSelectChecked_ = self.radioButtonTimeSelect.isChecked()
-        self.timeStartLabel.setEnabled(isTimeSelectChecked_)
-        self.timeStartSpinBox.setEnabled(isTimeSelectChecked_)
-        self.timeFinishLabel.setEnabled(isTimeSelectChecked_)
-        self.timeFinishSpinBox.setEnabled(isTimeSelectChecked_)
-        return
+        self.previewTable_.setRowCount(len(keys))
+        for i, (obj, info) in enumerate(keys.items()):
+            self.previewTable_.setItem(i, 0, QtWidgets.QTableWidgetItem(obj))
+            self.previewTable_.setItem(i, 1, QtWidgets.QTableWidgetItem(str(info.get("current", -1))))
+            self.previewTable_.setItem(i, 2, QtWidgets.QTableWidgetItem(str(info.get("after", -1))))
+            self.previewTable_.setItem(i, 3, QtWidgets.QTableWidgetItem(str(info.get("reduced", -1))))
 
 def KeyframeOptimizerGUI_build_gui():
     """キーフレーム最適化GUIを表示する関数
