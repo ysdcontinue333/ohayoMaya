@@ -1,8 +1,0 @@
-# GitLFSで管理するバイナリファイル群
-# 実ファイルはGitLFSで管理され、リポジトリにはポインタを残す
-# diff/mergeもLFSで処理し、text変換は行わない
-
-*.fbx filter=lfs diff=lfs merge=lfs -text
-*.bvh filter=lfs diff=lfs merge=lfs -text
-*.mspj filter=lfs diff=lfs merge=lfs -text
-*.mb filter=lfs diff=lfs merge=lfs -text
